@@ -1,0 +1,270 @@
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import "./Crud.css";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faFile, faFileAlt, faFilePdf, faFileWord, faFileExcel, faFilePowerpoint, faFileImage, faFolderOpen, faPencilAlt, faPlus, faTrash } from "@fortawesome/free-solid-svg-icons";
+
+export default function Crud() {
+    const [archivo, setArchivo] = useState(null); //rpara subir el archivo
+    const [archivoNombre, setArchivoNombre] = useState(''); 
+    const [documents, setDocuments] = useState([]); //recibir los objetos
+    const [editMode, setEditMode] = useState(false);
+    const [createMode, setCreateMode] = useState(false);
+    const [selectedDocuments, setSelectedDocuments] = useState([]);
+    const [documentIds, setDocumentIds] = useState([]);
+    const [ventanaEdit, setventanaEdit] = useState(false);
+    const [ventanaCrear, setventanaCrear] = useState(false);
+    const [archivosAnteriores, setArchivosAnteriores] = useState([]);
+    const [cantiArchi, setcantiArchi] = useState(0);
+
+    useEffect(() => {
+        fetchDocuments(); // Cargar documentos al ejecutar el componente
+    }, []);
+
+    // GET - lista
+    const fetchDocuments = async () => {
+        try {
+            const response = await axios.get('http://127.0.0.1:8000/documents/documento/');
+            setDocuments(response.data.data);
+        } catch (error) {
+            console.log(error);
+        }
+    };
+
+    // DELETE
+    const deleteDocuments = async () => {
+        const idsToDelete = selectedDocuments.map(doc => doc.id);
+        if (idsToDelete.length === 0) return;
+
+        const filenamesToDelete = selectedDocuments.map(doc => getFileName(doc.archivo)).join(', ');
+
+        const confirmDelete = window.confirm(`¿Desea eliminar los archivos seleccionados: ${filenamesToDelete}?`);
+        if (confirmDelete) {
+            try {
+                // Ejecutar la función de eliminación para cada documento seleccionado
+                await Promise.all(idsToDelete.map(id => axios.delete(`http://127.0.0.1:8000/documents/documento/${id}/`)));
+                fetchDocuments();
+                setSelectedDocuments([]);
+            } catch (error) {
+                console.log(error);
+            }
+        }
+    };
+
+    // POST
+    const createDocument = async (archivo) => {
+        const formData = new FormData();
+        formData.append('archivo', archivo);
+
+        try {
+            await axios.post('http://127.0.0.1:8000/documents/documento/', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+            fetchDocuments();
+        } catch (error) {
+            console.log(error);
+        }
+    };
+
+    // PUT
+    const updateDocument = async (id) => {
+        const formData = new FormData();
+        formData.append('archivo', archivo);
+
+        try {
+            await axios.put(`http://127.0.0.1:8000/documents/documento/${id}/`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+            fetchDocuments();
+        } catch (error) {
+            console.log(error);
+        }
+    };
+
+    const handleArchivoChange = (event) => {
+        setArchivo(event.target.files[0]);
+        setArchivoNombre(event.target.files[0].name);
+    };
+
+    const handleEdit = () => {
+        setEditMode(true);
+        setCreateMode(false);
+        setventanaEdit(true);
+        setArchivosAnteriores(selectedDocuments.map(doc => getFileName(doc.archivo)));
+        setDocumentIds(selectedDocuments.map(doc => doc.id));
+    };
+
+    const handleCreate = () => {
+        setEditMode(false);
+        setCreateMode(true);
+        setventanaCrear(true);
+        setArchivo(null);
+        setArchivoNombre('');
+    };
+
+    const handleDocumentClick = (document) => {
+        const isSelected = selectedDocuments.some(doc => doc.id === document.id);
+        if (isSelected) {
+            setSelectedDocuments(selectedDocuments.filter(doc => doc.id !== document.id));
+        } else {
+            setSelectedDocuments([...selectedDocuments, document]);
+        }
+        
+        // Actualizar el nombre del archivo a editar al hacer clic en un documento
+        setArchivoNombre(getFileName(document.archivo));
+    };
+
+    const handleSubmit = async (event) => {
+        event.preventDefault();
+    
+        // Verificar si hay archivos seleccionados para editar
+        if (editMode && documentIds.length > 0) {
+            await Promise.all(documentIds.map(id => updateDocument(id)));
+        } else if (createMode && archivo) {
+            await createDocument(archivo);
+            setcantiArchi(prev => prev - 1); // Reducir el contador de archivos por crear
+        }
+    
+        // Limpiar estados y actualizar lista de documentos
+        setArchivo(null);
+        setArchivoNombre('');
+        setDocumentIds([]);
+        setArchivosAnteriores([]);
+        fetchDocuments();
+    
+        if (cantiArchi <= 1) {
+            setventanaEdit(false); // Cerrar el modal después de enviar si no quedan más archivos por crear
+        }
+    };
+
+    const handleQuantitySubmit = (event) => {
+        event.preventDefault();
+        setventanaCrear(false);
+        setventanaEdit(true);
+    };
+    
+
+    // Función para obtener el nombre del archivo sin la ruta de la carpeta
+    const getFileName = (filepath) => {
+        if (filepath) {
+            const parts = filepath.split('/');
+            return parts[parts.length - 1];
+        }
+        return '';
+    };
+
+    // Función para obtener el icono basado en la extensión del archivo
+    const getFileIcon = (filename) => {
+        if (filename) {
+            const extension = filename.split('.').pop().toLowerCase();
+            switch (extension) {
+                case 'pdf':
+                    return faFilePdf;
+                case 'doc':
+                case 'docx':
+                    return faFileWord;
+                case 'xls':
+                case 'xlsx':
+                    return faFileExcel;
+                case 'ppt':
+                case 'pptx':
+                    return faFilePowerpoint;
+                case 'jpg':
+                case 'jpeg':
+                case 'png':
+                case 'gif':
+                    return faFileImage;
+                default:
+                    return faFileAlt; // Icono por defecto para tipos de archivo desconocidos
+            }
+        }
+        return faFile; // Icono por defecto si no hay nombre de archivo
+    };
+
+    return (
+        <div id="div-principal">
+            <div className="content">
+                <div className="header">
+                    <h1>Archivos</h1>
+                    <div className="icons">
+                        {selectedDocuments.length > 0 && (
+                            <div className="icon-wrapper">
+                                <FontAwesomeIcon icon={faPencilAlt} onClick={handleEdit} />
+                            </div>
+                        )}
+                        <div className="icon-wrapper">
+                            <FontAwesomeIcon icon={faFolderOpen} />
+                        </div>
+                        <div className="icon-wrapper">
+                            <FontAwesomeIcon icon={faPlus} onClick={handleCreate} />
+                        </div>
+                        <div className="icon-wrapper" onClick={deleteDocuments}>
+                            <FontAwesomeIcon icon={faTrash} />
+                        </div>
+                    </div>
+                </div>
+                <div className="documents">
+                    <div className="document-list">
+                        {documents.map((document) => (
+                            <div key={document.id} className={`document-item ${selectedDocuments.some(doc => doc.id === document.id) ? 'selected' : ''}`} onClick={() => handleDocumentClick(document)}>
+                                <FontAwesomeIcon icon={getFileIcon(document.archivo)} className="icon" />
+                                <span>{getFileName(document.archivo)}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            {ventanaEdit && (
+                <div className={`modal ${ventanaEdit ? 'show' : ''}`}>
+                    <div className="modal-content">
+                        <span className="close" onClick={() => setventanaEdit(false)}>&times;</span>
+                        <h2>{editMode ? 'Editar Documento' : 'Seleccione Archivo'}</h2>
+                        <form onSubmit={handleSubmit}>
+                            {editMode && archivosAnteriores.map((archivoAnterior, index) => (
+                                <div key={index}>
+                                    <label>Archivo anterior: {archivoAnterior}</label>
+                                </div>
+                            ))}
+                            <div>
+                                <input id={`file-input`} type="file" onChange={handleArchivoChange} />
+                            </div>
+                            {archivoNombre && (
+                                <div>
+                                    <button type="submit">Enviar</button>
+                                </div>
+                            )}
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {ventanaCrear && (
+                <div className={`modal ${ventanaCrear ? 'show' : ''}`}>
+                    <div className="modal-content">
+                        <span className="close" onClick={() => setventanaCrear(false)}>&times;</span>
+                        <h2>¿Cuántos archivos desea crear?</h2>
+                        <form onSubmit={handleQuantitySubmit}>
+                            <div>
+                                <input 
+                                    type="number" 
+                                    min="1" 
+                                    value={cantiArchi} 
+                                    onChange={(e) => setcantiArchi(parseInt(e.target.value))} 
+                                />
+                            </div>
+                            <div>
+                                <button type="submit">Continuar</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+

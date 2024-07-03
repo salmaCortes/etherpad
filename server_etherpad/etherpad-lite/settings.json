@@ -1,0 +1,154 @@
+{
+    "title": "Etherpad",
+    "favicon": null,
+    "skinName": "colibris",
+    "skinVariants": "super-light-toolbar super-light-editor light-background",
+    "ip": "0.0.0.0",
+    "port": 9001,
+    "showSettingsInAdminPage": true,
+    // "dbType": "dirty",
+    // "dbSettings": {
+    //   "filename": "var/dirty.db"
+    // },
+    "dbType" : "postgres",
+    "dbSettings" : {
+        "user"    : "salma",
+        "host"    : "localhost",
+        "password": "123",
+        "database": "servEtherpad",
+        "charset" : "utf8mb4"
+    },
+    "cors": "*", 
+    "socket.io": {
+      "origins": "http://localhost:*,http://localhost:3000"
+    },
+    "defaultPadText" : "Welcome to Etherpad!\n\nThis pad text is synchronized as you type, so that everyone viewing this page sees the same text. This allows you to collaborate seamlessly on documents!\n\nGet involved with Etherpad at https:\/\/etherpad.org\n",
+    "padOptions": {
+      "noColors":         false,
+      "showControls":     true,
+      "showChat":         true,
+      "showLineNumbers":  true,
+      "useMonospaceFont": false,
+      "userName":         null,
+      "userColor":        null,
+      "rtl":              false,
+      "alwaysShowChat":   false,
+      "chatAndUsers":     false,
+      "lang":             null
+    },
+    "padShortcutEnabled" : {
+      "altF9":     true,
+      "altC":      true,
+      "cmdShift2": true,
+      "delete":    true,
+      "return":    true,
+      "esc":       true,
+      "cmdS":      true,
+      "tab":       true,
+      "cmdZ":      true,
+      "cmdY":      true,
+      "cmdI":      true,
+      "cmdB":      true,
+      "cmdU":      true,
+      "cmd5":      true,
+      "cmdShiftL": true,
+      "cmdShiftN": true,
+      "cmdShift1": true,
+      "cmdShiftC": true,
+      "cmdH":      true,
+      "ctrlHome":  true,
+      "pageUp":    true,
+      "pageDown":  true
+    },
+    "suppressErrorsInPadText": false,
+    "minify": true,
+    "maxAge": 21600, // 60 * 60 * 6 = 6 hours
+    "abiword": null,
+    "soffice": null,
+    "allowUnknownFileEnds": true,
+    "requireAuthentication": false,
+    "requireAuthorization": false,
+    "cookie": {
+      "keyRotationInterval": 86400000, // = 1d * 24h/d * 60m/h * 60s/m * 1000ms/s
+      "sameSite": "Lax",
+      "sessionLifetime": 864000000, // = 10d * 24h/d * 60m/h * 60s/m * 1000ms/s
+      "sessionRefreshInterval": 86400000 // = 1d * 24h/d * 60m/h * 60s/m * 1000ms/s
+    },
+    "disableIPlogging": false,
+    "automaticReconnectionTimeout": 0,
+    "scrollWhenFocusLineIsOutOfViewport": {
+      "percentage": {
+        "editionAboveViewport": 0,
+        "editionBelowViewport": 0
+      },
+      "duration": 0,
+      "scrollWhenCaretIsInTheLastLineOfViewport": false,
+      "percentageToScrollWhenUserPressesArrowUp": 0
+    },
+    "users": {
+      "admin": {
+        // 1) "password" can be replaced with "hash" if you install ep_hash_auth
+        // 2) please note that if password is null, the user will not be created
+        "password": "admin",
+        "is_admin": true
+      },
+      "user": {
+        // 1) "password" can be replaced with "hash" if you install ep_hash_auth
+        // 2) please note that if password is null, the user will not be created
+        "password": "changeme1",
+        "is_admin": false
+      }
+    },
+    "socketTransportProtocols": ["websocket", "xhr-polling", "jsonp-polling", "htmlfile", "flashsocket"],
+    "socketTransports": ["xhr-polling", "jsonp-polling", "htmlfile", "websocket", "flashsocket"],
+    "trustProxy": true,
+    "disableIPAddressLogging": false,
+    "loadTest": false,
+    "allowAnyOrigin": true,
+    "requireSession": true,
+    "editOnly": false,
+    "socketIo": {
+      "loglevel": 2,
+      "transports": ["websocket", "xhr-polling", "jsonp-polling", "htmlfile", "flashsocket"]
+    },
+    "dumpOnUncleanExit": false,
+    "importExportRateLimiting": {
+      // duration of the rate limit window (milliseconds)
+      "windowMs": 90000,
+      // maximum number of requests per IP to allow during the rate limit window
+      "max": 10
+    },
+    "importMaxFileSize": 52428800, // 50 * 1024 * 1024
+    "authenticationMethod": "${AUTHENTICATION_METHOD:apikey}",
+    "commitRateLimiting": {
+      // duration of the rate limit window (seconds)
+      "duration": 1,
+      // maximum number of changes per IP to allow during the rate limit window
+      "points": 10
+    },
+    "exposeVersion": false,
+    "loglevel": "INFO",
+    "customLocaleStrings": {},
+    "enableAdminUITests": false,
+    "lowerCasePadIds": false,
+    "sso": {
+      "issuer": "${SSO_ISSUER:http://localhost:9001}",
+        "clients": [
+          {
+            "client_id": "${ADMIN_CLIENT:admin_client}",
+            "client_secret": "${ADMIN_SECRET:admin}",
+            "grant_types": ["authorization_code"],
+            "response_types": ["code"],
+            "redirect_uris": ["${ADMIN_REDIRECT:http://localhost:9001/admin/}"]
+          },
+          {
+            "client_id": "${USER_CLIENT:user_client}",
+            "client_secret": "${USER_SECRET:user}",
+            "grant_types": ["authorization_code"],
+            "response_types": ["code"],
+            "redirect_uris": ["${USER_REDIRECT:http://localhost:9001/}"]
+          }
+        ]
+      }
+  }
+   

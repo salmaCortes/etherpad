@@ -1,0 +1,148 @@
+                        <th>Opciones</th>
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+
+// Componente CRUD para documentos
+export default function Crud() {
+    const [archivo, setArchivo] = useState(null);
+    const [archivoNombre, setArchivoNombre] = useState('');
+    const [documents, setDocuments] = useState([]); 
+    const [editMode, setEditMode] = useState(false);
+    const [documentId, setDocumentId] = useState(null);
+
+    useEffect(() => {
+        fetchDocuments(); // Cargar documentos al montar el componente
+    }, []);
+
+    // GET - lista
+    const fetchDocuments = async () => {
+        try {
+            const response = await axios.get('http://127.0.0.1:8000/documents/documento/');
+            console.log(response.data); 
+            setDocuments(response.data.data);
+        } catch (error) {
+            console.log(error);
+        }
+    };
+
+    const deleteD = async (id) => {
+        try {
+            await axios.delete(`http://127.0.0.1:8000/documents/documento/${id}/`);
+            fetchDocuments();
+        } catch (error) {
+            console.log(error);
+        }
+    };
+
+    // POST
+    const createD = async (archivo) => {
+        const formData = new FormData();
+        formData.append('archivo', archivo);
+
+        try {
+            await axios.post('http://127.0.0.1:8000/documents/documento/', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+            fetchDocuments();
+        } catch (error) {
+            console.log(error);
+        }
+    };
+
+    // PUT
+    const updateD = async (id, archivo) => {
+        const formData = new FormData();
+        formData.append('archivo', archivo);
+
+        try {
+            await axios.put(`http://127.0.0.1:8000/documents/documento/${id}/`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+            fetchDocuments();
+        } catch (error) {
+            console.log(error);
+        }
+    };
+
+    const handleArchivoChange = (event) => {
+        setArchivo(event.target.files[0]);
+        setArchivoNombre(event.target.files[0].name);
+    };
+
+    const handleEdit = (document) => {
+        setArchivo(null);
+        setArchivoNombre(document.archivo);
+        setEditMode(true);
+        setDocumentId(document.id);
+    };
+
+    const handleSubmit = async (event) => {
+        event.preventDefault();
+        if (editMode) {
+            await updateD(documentId, archivo);
+        } else {
+            await createD(archivo);
+        }
+        setArchivo(null);
+        setArchivoNombre('');
+        setEditMode(false);
+        setDocumentId(null);
+        fetchDocuments();
+        
+        // Restablecer el valor del input file
+        document.getElementById('file-input').value = null;
+    };
+
+    return (
+        <div>
+            <h1>CRUD DOCUMENTS</h1>
+            <form onSubmit={handleSubmit}>
+                <div>
+                    {archivoNombre ? (
+                        editMode && !archivo ? (
+                            <label>Archivo a editar: {archivoNombre}</label>
+                        ) : (
+                            <label></label>
+                        )
+                    ) : (
+                        <label></label>
+                    )}
+                </div>
+                <input 
+                    id="file-input"
+                    type="file" 
+                    name="archivo" 
+                    onChange={handleArchivoChange} 
+                    required={!editMode} // Required only when not editing
+                />
+                <button type="submit">
+                    {editMode ? 'Actualizar' : 'Crear'}
+                </button>
+            </form>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Archivo</th>
+                        <th>Opciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {documents.map((document) => (
+                        <tr key={document.id}>
+                            <td>{document.archivo}</td>
+                            <td>
+                                <button onClick={() => deleteD(document.id)}>Eliminar</button>
+                                <button onClick={() => handleEdit(document)}>Editar</button>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
+    );
+}
+
